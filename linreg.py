@@ -7,6 +7,21 @@
 import sys
 import numpy as np
 
+# function to normalize data
+def normalizeData(data, n):
+    data.astype(np.float)
+    for col in list(range(0, n)):
+        max = float(data[:,col].max())
+        min = float(data[:,col].min())
+        if (max == min):
+            max = min + 1
+        
+        difference = float(max - min)
+        data[:,col] = (data[:,col] - min) / difference
+
+
+## MAIN
+
 # Read database
 filename = sys.argv[1]
 file = open(filename, "r")
@@ -44,6 +59,13 @@ for line in file:
     price.append(float(line[7]))
 
 # convert lists to numpy arrays
-print(data)
 data = np.array(data)
-print(data)
+
+# add bias (Xo = 1)
+data = np.insert(data, 0, 1.0, axis=1)
+
+# normalize data
+data = normalizeData(data, n)
+
+thetas = np.ones(n, dtype=float)
+
