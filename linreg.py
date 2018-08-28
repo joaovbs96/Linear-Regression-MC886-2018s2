@@ -8,17 +8,26 @@ import sys
 import numpy as np
 
 # function to normalize data
-def normalizeData(data, n):
+def normalize(data, n):
     data.astype(np.float)
-    for col in list(range(0, n)):
+    for col in range(n):
         max = float(data[:,col].max())
         min = float(data[:,col].min())
         if (max == min):
             max = min + 1
         
-        difference = float(max - min)
-        data[:,col] = (data[:,col] - min) / difference
+        diff = float(max - min)
+        data[:,col] = (data[:,col] - min) / diff
 
+# cost
+def costFun(data, price, theta):
+    m = len(data)
+    cost = 0
+
+    for i in range(m):
+        for j in range(len(data[i])):
+            cost += theta[j]*data[i][j]
+        
 
 ## MAIN
 
@@ -28,7 +37,7 @@ file = open(filename, "r")
 line = file.readline()
 
 # Number of features
-n = len(line.split(",")[1:]) - 1
+n = len(line.split(",")[1:])
 
 # Value dictionaries for non-numerical features
 cutValue = {}
@@ -45,6 +54,7 @@ for line in file:
     line = line.split(",")
 
     temp = []
+    temp.append(1)
     temp.append(float(line[1]))
     temp.append(cutValue[line[2].replace(chr(34), "")])
     temp.append(colorValue[line[3].replace(chr(34), "")])
@@ -58,14 +68,23 @@ for line in file:
 
     price.append(float(line[7]))
 
-# convert lists to numpy arrays
-data = np.array(data)
 
-# add bias (Xo = 1)
-data = np.insert(data, 0, 1.0, axis=1)
+# normalize dat
+data = normalize(data, n)
 
-# normalize data
-data = normalizeData(data, n)
+# split training/test
+testData, trainingData = [], []
+for f in data:
+    testData.append(f[:8091])
+    trainingData.append(f[8091:])
+testPrice, trainingPrice = price[:8091], price[8091:]
 
+testData = np.array(testData)
+trainingData = np.array(trainingData)
+
+testPrice = np.array(testPrice)
+trainingPrice = np.array(trainingPrice)
+
+# cost
 thetas = np.ones(n, dtype=float)
-
+c = costFun(trainingData, trainingPrice, thetas)
