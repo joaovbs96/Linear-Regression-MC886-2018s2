@@ -10,14 +10,16 @@ from matplotlib import pyplot as plt
 
 # function to normalize data
 def normalize(data, n):
-    for col in range(n):
-        max = float(data[:][col].max())
-        min = float(data[:][col].min())
+    for col in range(1, n):
+        max = float(data[:,col].max())
+        min = float(data[:,col].min())
         if (max == min):
             max = min + 1
         
         diff = float(max - min)
         data[:,col] = (data[:,col] - min) / diff
+        
+    return data
 
 # gradient descent
 def gradientDescent(x, y, theta, alpha, m, n, it):
@@ -29,10 +31,17 @@ def gradientDescent(x, y, theta, alpha, m, n, it):
         hyp = np.dot(x, theta)
         loss = np.squeeze(hyp - y)
         J[i] = (np.sum(loss**2)/(2*m))
-        gradient = np.squeeze(np.dot(xTrans, loss))/m
+        gradient = np.squeeze(np.dot(xTran, loss))/m
         theta = np.squeeze(theta - alpha * gradient)
 
     return J, theta
+
+def calcMAE(x, y, theta, m):
+
+    hypothesis = np.dot(x, theta)
+    MAE_validation = np.sum(abs(hypothesis - y)) / m
+    
+    return MAE_validation
 
 ## MAIN
 
@@ -73,19 +82,16 @@ for line in file:
 
     price.append(float(line[7]))
 
-
-# normalize dat
-data = normalize(data, n)
-
 # split training/test
 testData, trainingData = [], []
-for f in data:
-    testData.append(f[:8091])
-    trainingData.append(f[8091:])
-testPrice, trainingPrice = price[:8091], price[8091:]
 
-testData = np.array(testData)
-trainingData = np.array(trainingData)
+testData= data[:8091]
+trainingData = data[8091:]
+testPrice= price[:8091] 
+trainingPrice = price[8091:]
+
+testData = normalize(np.array(testData), n)
+trainingData = normalize(np.array(trainingData), n)
 
 testPrice = np.array(testPrice)
 trainingPrice = np.array(trainingPrice)
@@ -94,9 +100,13 @@ m = len(trainingPrice)
 
 # cost
 alpha = 0.1
-it = 100
+it = 10000
 thetas = np.ones(n, dtype=float)
 J, thetas = gradientDescent(trainingData, trainingPrice, thetas, alpha, m, n, it)
+
+a,b = np.shape(trainingData)
+MAE_test_reg_GD = calcMAE(trainingData, trainingPrice, thetas, a)
+print(MAE_test_reg_GD)
 
 plt.plot(J)
 plt.show()
