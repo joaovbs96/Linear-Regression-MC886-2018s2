@@ -10,10 +10,9 @@ from matplotlib import pyplot as plt
 
 # function to normalize data
 def normalize(data, n):
-    data.astype(np.float)
     for col in range(n):
-        max = float(data[:,col].max())
-        min = float(data[:,col].min())
+        max = float(data[:][col].max())
+        min = float(data[:][col].min())
         if (max == min):
             max = min + 1
         
@@ -62,9 +61,9 @@ for line in file:
     temp = []
     temp.append(1)
     temp.append(float(line[1]))
-    temp.append(cutValue[line[2].replace(chr(34), "")])
-    temp.append(colorValue[line[3].replace(chr(34), "")])
-    temp.append(clarityValue[line[4].replace(chr(34), "")])
+    temp.append(float(cutValue[line[2].replace(chr(34), "")]))
+    temp.append(float(colorValue[line[3].replace(chr(34), "")]))
+    temp.append(float(clarityValue[line[4].replace(chr(34), "")]))
     temp.append(float(line[5]))
     temp.append(float(line[6]))
     temp.append(float(line[8]))
