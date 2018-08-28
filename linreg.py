@@ -6,6 +6,7 @@
 
 import sys
 import numpy as np
+from matplotlib import pyplot as plt
 
 # function to normalize data
 def normalize(data, n):
@@ -19,15 +20,20 @@ def normalize(data, n):
         diff = float(max - min)
         data[:,col] = (data[:,col] - min) / diff
 
-# cost
-def costFun(data, price, theta):
-    m = len(data)
-    cost = 0
+# gradient descent
+def gradientDescent(x, y, theta, alpha, m, n, it):
+    xTran = x.transpose()
 
-    for i in range(m):
-        for j in range(len(data[i])):
-            cost += theta[j]*data[i][j]
-        
+    J = np.zeros(it)
+
+    for i in range(it):
+        hyp = np.dot(x, theta)
+        loss = np.squeeze(hyp - y)
+        J[i] = (np.sum(loss**2)/(2*m))
+        gradient = np.squeeze(np.dot(xTrans, loss))/m
+        theta = np.squeeze(theta - alpha * gradient)
+
+    return J, theta
 
 ## MAIN
 
@@ -85,6 +91,13 @@ trainingData = np.array(trainingData)
 testPrice = np.array(testPrice)
 trainingPrice = np.array(trainingPrice)
 
+m = len(trainingPrice)
+
 # cost
+alpha = 0.1
+it = 100
 thetas = np.ones(n, dtype=float)
-c = costFun(trainingData, trainingPrice, thetas)
+J, thetas = gradientDescent(trainingData, trainingPrice, thetas, alpha, m, n, it)
+
+plt.plot(J)
+plt.show()
