@@ -7,6 +7,7 @@
 import sys
 import numpy as np
 from matplotlib import pyplot as plt
+from sklearn import linear_model
 
 # function to normalize data
 def normalize(data, n):
@@ -51,7 +52,7 @@ file = open(filename, "r")
 line = file.readline()
 
 # Number of features
-n = len(line.split(",")[1:])
+n = len(line.split(",")[1:]) + 1
 
 # Value dictionaries for non-numerical features
 cutValue = {}
@@ -69,25 +70,25 @@ for line in file:
 
     temp = []
     temp.append(1)
-    temp.append(float(line[1]))
-    temp.append(float(cutValue[line[2].replace(chr(34), "")]))
-    temp.append(float(colorValue[line[3].replace(chr(34), "")]))
-    temp.append(float(clarityValue[line[4].replace(chr(34), "")]))
+    temp.append(float(line[0]))
+    temp.append(float(cutValue[line[1].replace(chr(34), "")]))
+    temp.append(float(colorValue[line[2].replace(chr(34), "")]))
+    temp.append(float(clarityValue[line[3].replace(chr(34), "")]))
+    temp.append(float(line[4]))
     temp.append(float(line[5]))
     temp.append(float(line[6]))
+    temp.append(float(line[7]))
     temp.append(float(line[8]))
-    temp.append(float(line[9]))
-    temp.append(float(line[10]))
     data.append(temp)
 
-    price.append(float(line[7]))
+    price.append(float(line[9]))
 
 # split training/test
 testData, trainingData = [], []
 
-testData= data[:8091]
+testData = data[:8091]
 trainingData = data[8091:]
-testPrice= price[:8091] 
+testPrice = price[:8091] 
 trainingPrice = price[8091:]
 
 testData = normalize(np.array(testData), n)
@@ -99,14 +100,20 @@ trainingPrice = np.array(trainingPrice)
 m = len(trainingPrice)
 
 # cost
-alpha = 0.1
+alpha = 0.01
 it = 10000
 thetas = np.ones(n, dtype=float)
 J, thetas = gradientDescent(trainingData, trainingPrice, thetas, alpha, m, n, it)
 
-a,b = np.shape(trainingData)
-MAE_test_reg_GD = calcMAE(trainingData, trainingPrice, thetas, a)
+samplesNumber, _ = np.shape(testData)
+MAE_test_reg_GD = calcMAE(testData, testPrice, thetas, samplesNumber)
 print(MAE_test_reg_GD)
 
 plt.plot(J)
-plt.show()
+#plt.show()
+
+clf = linear_model.SGDRegressor(alpha=0.0001, max_iter=10000)
+clf.fit(trainingData, trainingPrice)
+
+MAE_test_reg_GD = calcMAE(testData, testPrice, clf.coef_, samplesNumber)
+print(MAE_test_reg_GD)
