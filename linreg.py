@@ -20,6 +20,13 @@ def normalize(data, n):
         diff = float(max - min)
         data[:,col] = (data[:,col] - min) / diff
         
+    return data, min, diff
+
+#function to normalize data
+def normalizeValidation(data, n, min, diff):
+    for col in range(1, n):
+        data[:,col] = (data[:,col] - min) / diff
+        
     return data
 
 # gradient descent
@@ -36,6 +43,12 @@ def gradientDescent(x, y, theta, alpha, m, n, it):
         theta = np.squeeze(theta - alpha * gradient)
 
     return J, theta
+
+def normalEquation(x, y):
+    inverse = np.linalg.inv(np.dot(x.T, x))
+    thetas = np.dot(np.dot(inverse, x.T), y)
+    return thetas
+
 
 def calcMAE(x, y, theta, m):
 
@@ -84,36 +97,44 @@ for line in file:
     price.append(float(line[9]))
 
 # split training/test
-testData, trainingData = [], []
+validationData, trainingData = [], []
 
-testData = data[:8091]
-trainingData = data[8091:]
-testPrice = price[:8091] 
-trainingPrice = price[8091:]
+validationData = data[-8091:]
+trainingData = data[:-8091]
+validationPrice = price[-8091:] 
+trainingPrice = price[:-8091]
 
-testData = normalize(np.array(testData), n)
-trainingData = normalize(np.array(trainingData), n)
+validationData, min, diff = normalize(np.array(validationData), n)
+trainingData = normalizeValidation(np.array(trainingData), n, min, diff)
 
-testPrice = np.array(testPrice)
+validationPrice = np.array(validationPrice)
 trainingPrice = np.array(trainingPrice)
 
 m = len(trainingPrice)
 
 # cost
-alpha = 0.01
-it = 10000
-thetas = np.ones(n, dtype=float)
-J, thetas = gradientDescent(trainingData, trainingPrice, thetas, alpha, m, n, it)
+# alphaMax = 0.00000001
+alpha = 0.00000001
+# itMax = 100000
+it = 1000
+thetasGD = np.ones(n, dtype=float)
+J, thetGD = gradientDescent(trainingData, trainingPrice, thetasGD, alpha, m, n, it)
 
-samplesNumber, _ = np.shape(testData)
-MAE_test_reg_GD = calcMAE(testData, testPrice, thetas, samplesNumber)
+samplesNumber, _ = np.shape(validationData)
+#T = [0.95526007, 0.99452856, 0.96676548, 0.97391538, 0.98008266, 0.97620609, 0.99565883, 0.98043281, 0.97619554, 0.98760811]
+MAE_test_reg_GD = calcMAE(validationData, validationPrice, thetasGD, samplesNumber)
 print(MAE_test_reg_GD)
 
-plt.plot(J)
+#plt.plot(J)
 #plt.show()
 
-clf = linear_model.SGDRegressor(alpha=0.0001, max_iter=10000)
+clf = linear_model.SGDRegressor(max_iter=it, eta0=alpha, learning_rate='constant')
 clf.fit(trainingData, trainingPrice)
 
-MAE_test_reg_GD = calcMAE(testData, testPrice, clf.coef_, samplesNumber)
+MAE_test_reg_GD = calcMAE(validationData, validationPrice, clf.coef_, samplesNumber)
 print(MAE_test_reg_GD)
+
+thetasNE = normalEquation(trainingData, trainingPrice)
+T = [ 0.06855487, 2.81424015, 0.02465473, 0.10490848, 0.19005936, -0.53677227, 0.15405773, -0.00671723, -0.15854809, -0.08902239]
+MAE_test_NE = calcMAE(validationData, validationPrice, thetasNE, samplesNumber)
+print(MAE_test_NE)
