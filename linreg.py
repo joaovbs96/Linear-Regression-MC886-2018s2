@@ -179,9 +179,11 @@ m, n = trainData.shape
 it = 10000 # itMax = 100000
 alpha = 0.01 # alphaMax = 0.00000001
 
+# run models
 runGD(trainData, trainTarget, n, m, it, validData, validTarget)
 runSklearn(trainData, trainTarget, it, alpha, validData, validTarget)
 runNE(trainData, trainTarget, validData, validTarget)
 
+# run models with regularization
 runGDWithRegularization(trainData, trainTarget, n, m, it, validData, validTarget)
 runNEWithRegularization(trainData, trainTarget, validData, validTarget)
