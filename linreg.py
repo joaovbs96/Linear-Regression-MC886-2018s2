@@ -26,8 +26,32 @@ def gradientDescent(x, y, alpha, n, m, it):
 
     return J, theta
 
+# gradient descent with regularization
+def gradientDescentWithRegularization(x, y, alpha, n, m, it, reg):
+    xTran = x.transpose()
+    theta = np.ones(n, dtype=float)
+    J = np.zeros(it)
+
+    for i in range(it):
+        hyp = np.dot(x, theta)
+        loss = hyp - y['price'].values
+        J[i] = (np.sum(loss**2) + reg*np.sum(theta**2))/(2*m)
+        gradient = np.squeeze(np.dot(xTran, loss))/m
+        theta = np.squeeze(theta - alpha * gradient)
+
+        theta = theta * (1 - alpha * (reg / m)) - alpha * gradient
+
+    return J, theta
+
 def normalEquation(x, y):
     inverse = np.linalg.inv(np.dot(x.T, x))
+    thetas = np.dot(np.dot(inverse, x.T), y['price'].values)
+    return thetas
+
+def normalEquationWithRegularization(x, y, reg):
+    identity = np.identity(x.shape[1])
+    identity[0][0] = 0
+    inverse = np.linalg.inv(np.dot(x.T, x) + reg*identity)
     thetas = np.dot(np.dot(inverse, x.T), y['price'].values)
     return thetas
 
@@ -37,6 +61,74 @@ def calcMAE(x, y, theta, m):
     MAE_validation = np.sum(abs(hypothesis - y)) / m
 
     return MAE_validation
+
+def runGD(trainData, trainTarget, n, m, it, validData, validTarget):
+    alphas = [0.1, 0.01, 0.001, 0.0001]
+    alphas = np.array(alphas)
+    colors = ['cyan', 'green', 'magenta', 'blue']
+
+    for i,alphaGD in enumerate(alphas):
+
+        # apply gradient descent
+        J, thetas = gradientDescent(trainData, trainTarget, alphaGD, n, m, it)
+
+        printErros("GD alpha=" + str(alphaGD), validData, validTarget, thetas)
+
+        plt.plot(J, colors[i], label='alpha: ' + str(alphaGD))
+        plt.legend()
+        plt.ylabel('Função de custo J')
+        plt.xlabel('Número de itarações')
+        plt.title('GD para diferentes taxas de aprendizado')
+    plt.show()
+
+def runSklearn(trainData, trainTarget, it, alpha, validData, validTarget):
+    clf = linear_model.SGDRegressor(max_iter=it, eta0=alpha, learning_rate='constant')
+    clf.fit(trainData, trainTarget['price'].values)
+
+    printErros("SKLearn", validData, validTarget, clf.coef_)
+
+
+def runNE(trainData, trainTarget, validData, validTarget):
+    thetasNE = normalEquation(trainData, trainTarget)
+
+    printErros("NE", validData, validTarget, thetasNE)
+
+def runGDWithRegularization(trainData, trainTarget, n, m, it, validData, validTarget):
+    alphaGDR = 0.1
+    regularizations = [10, 100, 1000, 10000]
+    regularizations = np.array(regularizations)
+    colors = ['blue', 'green', 'red', 'purple']
+
+    for i,reg in enumerate(regularizations):
+        J, thetasGDR = gradientDescentWithRegularization(trainData, trainTarget, alphaGDR, n, m, it, reg)
+        
+        printErros("GD alpha=0.1 + Reg=" + str(reg), validData, validTarget, thetasGDR)
+
+        plt.plot(J, colors[i], label='lambda reg: ' + str(reg))
+        plt.legend()
+        plt.ylabel('Função de custo J')
+        plt.xlabel('Número de itarações')
+        plt.title('GD com regularização - alpha: 0.1')
+    plt.show()
+
+
+def runNEWithRegularization(trainData, trainTarget, validData, validTarget):
+    regularizations = [10, 100, 1000, 10000]
+    regularizations = np.array(regularizations)
+
+    for _,reg in enumerate(regularizations):
+        thetasNER = normalEquationWithRegularization(trainData, trainTarget, reg)
+
+        printErros("NE + Reg=" + str(reg), validData, validTarget, thetasNER)
+
+
+def printErros(method, validData, validTarget, thetas):
+    y = validTarget['price'].values.ravel()
+    numberOfSamples, _ = validData.shape
+
+    print('MSE para ' + method + ': ' + str(mean_squared_error(np.dot(validData, thetas), y)))
+    print('MAE para ' + method + ': ' + str(calcMAE(validData, y, thetas, numberOfSamples)))
+
 
 ## MAIN
 
@@ -87,24 +179,9 @@ m, n = trainData.shape
 it = 10000 # itMax = 100000
 alpha = 0.01 # alphaMax = 0.00000001
 
-# apply gradient descent
-J, thetas = gradientDescent(trainData, trainTarget, alpha, n, m, it)
+runGD(trainData, trainTarget, n, m, it, validData, validTarget)
+runSklearn(trainData, trainTarget, it, alpha, validData, validTarget)
+runNE(trainData, trainTarget, validData, validTarget)
 
-plt.plot(J)
-plt.show()
-
-clf = linear_model.SGDRegressor(max_iter=it, eta0=alpha, learning_rate='constant')
-clf.fit(trainData, trainTarget['price'].values)
-
-thetasNE = normalEquation(trainData, trainTarget)
-
-y = trainTarget['price'].values.ravel()
-print('MSE')
-print('Our Model: ' + str(mean_squared_error(np.dot(trainData, thetas), y)))
-print('SKLearn: ' + str(mean_squared_error(np.dot(trainData, clf.coef_), y)))
-print('Normal Equation: ' + str(mean_squared_error(np.dot(trainData, thetasNE), y)))
-
-print('MAE')
-print('Our Model: ' + str(calcMAE(trainData, y, thetas, m)))
-print('SKLearn: ' + str(calcMAE(trainData, y, clf.coef_, m)))
-print('Normal Equation: ' + str(calcMAE(trainData, y, thetasNE, m)))
+runGDWithRegularization(trainData, trainTarget, n, m, it, validData, validTarget)
+runNEWithRegularization(trainData, trainTarget, validData, validTarget)
