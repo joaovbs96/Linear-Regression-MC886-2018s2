@@ -99,6 +99,8 @@ data = data.drop('price', axis='columns')
 trainData, trainTarget = data.iloc[8091:], target.iloc[8091:]
 validData, validTarget = data.iloc[:8091], target.iloc[:8091]
 
+trainData['carat'] = trainData['carat']**2
+
 # normalize features
 for c in trainData.columns.values:
     if(c != 'bias'):
