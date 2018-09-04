@@ -69,18 +69,12 @@ def calcMAE(x, y, theta, m):
 
 ## MAIN
 
-# execução: linreg.py [train_data] [test_data]
-
 # disable SettingWithCopyWarning warnings
 pd.options.mode.chained_assignment = None  # default='warn'
 
-# Read train database
+# Read database
 filename = sys.argv[1]
 data = pd.read_csv(filename)
-
-# read test database
-filename = sys.argv[2]
-testData = pd.read_csv(filename)
 
 # Map values of non-numerical features
 cutValue = {'Fair': 1, 'Good': 2, 'Very Good': 3, 'Premium': 4, 'Ideal': 5}
@@ -91,16 +85,9 @@ data['color'] = data['color'].map(colorValue)
 data['cut'] = data['cut'].map(cutValue)
 data['clarity'] = data['clarity'].map(clarityValue)
 
-testData['color'] = testData['color'].map(colorValue)
-testData['cut'] = testData['cut'].map(cutValue)
-testData['clarity'] = testData['clarity'].map(clarityValue)
-
 # insert bias
 m, _ = data.shape
 data.insert(0, 'bias', np.array(m*[1.0]))
-
-m, _ = testData.shape
-testData.insert(0, 'bias', np.array(m*[1.0]))
 
 # insert volume feature
 volume = np.multiply(data['x'].values, data['y'].values)
@@ -108,26 +95,18 @@ volume = np.multiply(volume, data['z'].values)
 data.insert(5, 'volume',  volume)
 data = data.drop(['x', 'y', 'z'], axis='columns')
 
-testVolume = np.multiply(testData['x'].values, testData['y'].values)
-testVolume = np.multiply(testVolume, testData['z'].values)
-testData.insert(5, 'volume',  testVolume)
-testData = testData.drop(['x', 'y', 'z'], axis='columns')
+#print(data)
+#sys.exit(0)
 
 # separate target from data sets
 target = data.drop(data.columns.values[:-1], axis='columns')
 data = data.drop('price', axis='columns')
 
-targetTest = testData.drop(testData.columns.values[:-1], axis='columns')
-testData = testData.drop('price', axis='columns')
-
 # split dataset into train and validation
 trainData, trainTarget = data.iloc[8091:], target.iloc[8091:]
 validData, validTarget = data.iloc[:8091], target.iloc[:8091]
 
-# cut^2
 trainData['cut'] = trainData['cut']**2
-validData['cut'] = validData['cut']**2
-testData['cut'] = testData['cut']**2
 
 # normalize features
 for c in trainData.columns.values:
@@ -146,39 +125,74 @@ for c in trainData.columns.values:
         validData[c] -= min
         validData[c] /= diff
 
-        testData[c] -= min
-        testData[c] /= diff
-
 
 # calculate cost
 m, n = trainData.shape
-it = 100000
-r = 10
-alpha = 0.1
-yV = validTarget['price'].values.ravel()
-yTr = trainTarget['price'].values.ravel()
-yTe = targetTest['price'].values.ravel()
+#its = [1000, 10000, 100000]
+its = [100]
+reg = [10, 100, 1000, 10000]
+alphas = np.array([0.1, 0.01, 0.001, 0.0001])
+#alphas = np.array([0.1])
+colorsGD = ['blue', 'green', 'cyan', 'magenta']
+colorsGDR = ['black', 'orange', 'red', 'purple']
+y = validTarget['price'].values.ravel()
 
-print('GD:')
-J, thetas = gradientDescentReg(trainData, trainTarget, alpha, n, m, it, r)
-print('Train: ' + str(calcMAE(trainData, yTr, thetas, m)))
-print('Validation: ' + str(calcMAE(validData, yV, thetas, m)))
-print('Test: ' + str(calcMAE(testData, yTe, thetas, m)))
-print()
+#plt.figure(1)
 
-print('NE:')
-thetasNE = normalEquationReg(trainData, trainTarget, r)
-print('Train: ' + str(calcMAE(trainData, yTr, thetasNE, m)))
-thetasNE = normalEquationReg(validData, validTarget, r)
-print('Validation: ' + str(calcMAE(validData, yV, thetasNE, m)))
-thetasNE = normalEquationReg(testData, targetTest, r)
-print('Test: ' + str(calcMAE(testData, yTe, thetasNE, m)))
-print()
+for it in its:
+    for i, alpha in enumerate(alphas):
+        print('alpha: ' + str(alpha))
+
+        # apply gradient descent
+        J, thetas = gradientDescent(trainData, trainTarget, alpha, n, m, it)
+        print('Our Model:')
+        print('MAE: ' + str(calcMAE(validData, y, thetas, m)))
+        print()
+
+        # plot figure
+        #plt.subplot(3,1,1)
+        #plt.plot(J, colorsGD[i], label='alpha: ' + str(alpha))
+        #plt.legend()
+        #plt.ylabel('Função de custo J')
+        #plt.xlabel('Número de iterações')
+        #plt.title('DG para diferentes taxas de aprendizado')
+
+        for j,r in enumerate(reg):
+            J, thetas = gradientDescentReg(trainData, trainTarget, alpha, n, m, it, r)
+            print("Reg "+str(r)+":")
+            print('MAE: ' + str(calcMAE(validData, y, thetas, m)))
+            print()
+
+             # plot figure
+            #plt.subplot(3,1,3)
+            #plt.plot(J, colorsGDR[i], label='reg: ' + str(r))
+            #plt.legend()
+            #plt.ylabel('Função de custo J')
+            #plt.xlabel('Número de iterações')
+            #plt.title('DG para diferentes taxas de reguarização - alpha: ' + str(alpha))
+
+        thetasNE = normalEquation(trainData, trainTarget)
+        print('Normal Equation:')
+        print('MAE: ' + str(calcMAE(validData, y, thetasNE, m)))
+        print()
+        for r in reg:
+            thetasNE = normalEquationReg(trainData, trainTarget, r)
+            print("Reg "+str(r)+":")
+            print('MAE: ' + str(calcMAE(validData, y, thetasNE, m)))
+            print()
+
+
+    #print()
+    #plt.savefig(str(it) + '.png')
+    #plt.gcf().clear()
 
 # Sklearn
+
+it = 100000
+alpha = 0.1
 clf = linear_model.SGDRegressor(max_iter = it, eta0=alpha, learning_rate = 'constant')
 clf.fit(trainData, trainTarget['price'].values)
+targetPrediction = clf.predict(validData)
+print(targetPrediction)
 print('SKLearn:')
-print("Train: " + str(metrics.mean_absolute_error(trainTarget, clf.predict(trainData))))
-print("Validation: " + str(metrics.mean_absolute_error(validTarget, clf.predict(validData))))
-print("Test: " + str(metrics.mean_absolute_error(targetTest, clf.predict(testData))))
+print("MAE: " + str(metrics.mean_absolute_error(validTarget, targetPrediction)))
