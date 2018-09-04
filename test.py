@@ -128,72 +128,15 @@ for c in trainData.columns.values:
 
 # calculate cost
 m, n = trainData.shape
-#its = [1000, 10000, 100000]
-its = [100]
-reg = [10, 100, 1000, 10000]
-alphas = np.array([0.1, 0.01, 0.001, 0.0001])
-#alphas = np.array([0.1])
-colorsGD = ['blue', 'green', 'cyan', 'magenta']
-colorsGDR = ['black', 'orange', 'red', 'purple']
+
 y = validTarget['price'].values.ravel()
 
-#plt.figure(1)
-
-for it in its:
-    for i, alpha in enumerate(alphas):
-        print('alpha: ' + str(alpha))
-
-        # apply gradient descent
-        J, thetas = gradientDescent(trainData, trainTarget, alpha, n, m, it)
-        print('Our Model:')
-        print('MAE: ' + str(calcMAE(validData, y, thetas, m)))
-        print()
-
-        # plot figure
-        #plt.subplot(3,1,1)
-        #plt.plot(J, colorsGD[i], label='alpha: ' + str(alpha))
-        #plt.legend()
-        #plt.ylabel('Função de custo J')
-        #plt.xlabel('Número de iterações')
-        #plt.title('DG para diferentes taxas de aprendizado')
-
-        for j,r in enumerate(reg):
-            J, thetas = gradientDescentReg(trainData, trainTarget, alpha, n, m, it, r)
-            print("Reg "+str(r)+":")
-            print('MAE: ' + str(calcMAE(validData, y, thetas, m)))
-            print()
-
-             # plot figure
-            #plt.subplot(3,1,3)
-            #plt.plot(J, colorsGDR[i], label='reg: ' + str(r))
-            #plt.legend()
-            #plt.ylabel('Função de custo J')
-            #plt.xlabel('Número de iterações')
-            #plt.title('DG para diferentes taxas de reguarização - alpha: ' + str(alpha))
-
-        thetasNE = normalEquation(trainData, trainTarget)
-        print('Normal Equation:')
-        print('MAE: ' + str(calcMAE(validData, y, thetasNE, m)))
-        print()
-        for r in reg:
-            thetasNE = normalEquationReg(trainData, trainTarget, r)
-            print("Reg "+str(r)+":")
-            print('MAE: ' + str(calcMAE(validData, y, thetasNE, m)))
-            print()
-
-    
-    #print()
-    #plt.savefig(str(it) + '.png')
-    #plt.gcf().clear()
-
-# Sklearn 
 
 it = 100000
 alpha = 0.1
 clf = linear_model.SGDRegressor(max_iter = it, eta0=alpha, learning_rate = 'constant')
 clf.fit(trainData, trainTarget['price'].values)
 targetPrediction = clf.predict(validData)
-print(targetPrediction)
 print('SKLearn:')
-print("MAE: " + str(metrics.mean_absolute_error(validTarget, targetPrediction)))
-
+print("MAE: " + str(metrics.mean_absolute_error(y, targetPrediction)))
+print('MAE2: ' + str(calcMAE(validData, y, clf.coef_, m)))
