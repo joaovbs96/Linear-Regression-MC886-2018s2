@@ -159,6 +159,7 @@ yV = validTarget['price'].values.ravel()
 yTr = trainTarget['price'].values.ravel()
 yTe = targetTest['price'].values.ravel()
 
+# execute GD with regularization
 print('GD:')
 J, thetas = gradientDescentReg(trainData, trainTarget, alpha, n, m, it, r)
 print('Train: ' + str(calcMAE(trainData, yTr, thetas, m)))
@@ -166,6 +167,15 @@ print('Validation: ' + str(calcMAE(validData, yV, thetas, m)))
 print('Test: ' + str(calcMAE(testData, yTe, thetas, m)))
 print()
 
+# plot graph for GD with regularization
+plt.plot(J, 'blue')
+plt.ylabel('Função de custo J')
+plt.xlabel('Número de iterações')
+plt.title('DG para alpha 0.1 e regularização 10')
+plt.savefig('GDModel.png')
+plt.gcf().clear()
+
+# execute normal equation
 print('NE:')
 thetasNE = normalEquationReg(trainData, trainTarget, r)
 print('Train: ' + str(calcMAE(trainData, yTr, thetasNE, m)))
@@ -175,7 +185,7 @@ thetasNE = normalEquationReg(testData, targetTest, r)
 print('Test: ' + str(calcMAE(testData, yTe, thetasNE, m)))
 print()
 
-# Sklearn
+# execute Sklearn method
 clf = linear_model.SGDRegressor(max_iter = it, eta0=alpha, learning_rate = 'constant')
 clf.fit(trainData, trainTarget['price'].values)
 print('SKLearn:')
